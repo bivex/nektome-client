@@ -866,6 +866,36 @@ public sealed class VoiceChatSession : IDisposable
     public bool MicDspEnabled { get => _micDsp.IsEnabled; set => _micDsp.IsEnabled = value; }
     public bool EchoCancellationEnabled { get => _micDsp.EchoCancellationEnabled; set => _micDsp.EchoCancellationEnabled = value; }
 
+    // Mic level logging: publishes one throttled diagnostic per interval so the
+    // log shows what the peer actually receives (post-DSP, post-gain) versus the
+    // raw capture. This is how a dead-silent "they can't hear me" is diagnosed.
+    private DateTime _lastMicLevelLogUtc = DateTime.MinValue;
+    private static readonly TimeSpan MicLevelLogInterval = TimeSpan.FromSeconds(2);
+
+    private static (double Rms, double Peak) MeasureLevels(short[] pcm)
+    {
+        double sumSquares = 0;
+        double peak = 0;
+        for (int i = 0; i < pcm.Length; i++)
+        {
+            double v = pcm[i];
+            sumSquares += v * v;
+            double abs = Math.Abs(v);
+            if (abs > peak) peak = abs;
+        }
+        double rms = pcm.Length == 0 ? 0 : Math.Sqrt(sumSquares / pcm.Length);
+        return (rms, peak);
+    }
+
+    private static string FormatDbfs(double rms, double peak)
+    {
+        // Below -90 dBFS everything is effectively digital silence.
+        string Db(double value) => value < -90 ? "-∞" : value.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+        double rmsDb = rms <= 0 ? double.NegativeInfinity : 20.0 * Math.Log10(rms / 32767.0);
+        double peakDb = peak <= 0 ? double.NegativeInfinity : 20.0 * Math.Log10(peak / 32767.0);
+        return $"{Db(rmsDb)} dBFS (пик {Db(peakDb)})";
+    }
+
     private void OnMicrophonePcm(short[] pcm, int sampleRate)
     {
         // Drop frames while muted or not in chat
@@ -875,6 +905,7 @@ public sealed class VoiceChatSession : IDisposable
         }
 
         _micDsp.SetSampleRate(sampleRate);
+        (double rawRms, double rawPeak) = MeasureLevels(pcm);
         _micDsp.Process(pcm);
 
         if (Math.Abs(MicGain - 1.0f) > 0.01f)
@@ -885,6 +916,15 @@ public sealed class VoiceChatSession : IDisposable
                 gained[i] = (short)Math.Clamp((int)Math.Round(pcm[i] * MicGain), short.MinValue, short.MaxValue);
             }
             pcm = gained;
+        }
+
+        DateTime now = DateTime.UtcNow;
+        if (now - _lastMicLevelLogUtc >= MicLevelLogInterval)
+        {
+            _lastMicLevelLogUtc = now;
+            (double outRms, double outPeak) = MeasureLevels(pcm);
+            Events.Publish(new VoiceDiagnosticMessage(
+                $"🔬 Микрофон: вход {FormatDbfs(rawRms, rawPeak)} → в эфир {FormatDbfs(outRms, outPeak)}; усиление {MicGain * 100:F0}%"));
         }
 
         _engine?.PushMicrophonePcm(pcm, sampleRate);

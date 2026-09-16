@@ -26,7 +26,7 @@ public class AppSettings
     public string WebToken { get; set; } = string.Empty;
     public string AndroidId { get; set; } = string.Empty;
     public double SpeakerGainPercent { get; set; } = 100;
-    public double MicGainPercent { get; set; } = 200;
+    public double MicGainPercent { get; set; } = MicGainDefaultPercent;
     public bool MicDspEnabled { get; set; } = true;
     public bool SpeakerDspEnabled { get; set; } = true;
     public bool EchoCancellationEnabled { get; set; } = true;
@@ -35,11 +35,17 @@ public class AppSettings
     // zero and digital silence goes to the peer ("they can't hear me").
     public const double MicGainMinPercent = 25;
     public const double MicGainMaxPercent = 400;
+    public const double MicGainDefaultPercent = 200;
 
-    /// <summary>Fixes out-of-range values from configs written by older builds.</summary>
+    /// <summary>Fixes values from configs written by older builds. Out-of-range
+    /// is treated as corrupt and reset to the default: clamping a legacy 0% to
+    /// the 25% floor still sends a near-silent signal to the peer.</summary>
     public void Normalize()
     {
-        MicGainPercent = Math.Clamp(MicGainPercent, MicGainMinPercent, MicGainMaxPercent);
+        if (MicGainPercent < MicGainMinPercent || MicGainPercent > MicGainMaxPercent)
+        {
+            MicGainPercent = MicGainDefaultPercent;
+        }
     }
 }
 
