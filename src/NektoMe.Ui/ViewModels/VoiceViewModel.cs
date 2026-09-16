@@ -61,6 +61,7 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
 
         public float Gain { get; set; } = 1.0f;
         public bool DspEnabled { get => _dsp.IsEnabled; set => _dsp.IsEnabled = value; }
+        public bool EchoCancellationEnabled { get => _dsp.EchoCancellationEnabled; set => _dsp.EchoCancellationEnabled = value; }
 
         public VolumeAudioSink(IAudioSink inner) { _inner = inner; }
         
@@ -103,6 +104,7 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
         MicGainPercent = appSettings.MicGainPercent;
         MicDspEnabled = appSettings.MicDspEnabled;
         SpeakerDspEnabled = appSettings.SpeakerDspEnabled;
+        EchoCancellationEnabled = appSettings.EchoCancellationEnabled;
         
         if (!string.IsNullOrWhiteSpace(appSettings.SavedProxies))
         {
@@ -112,10 +114,11 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
         _playback = AudioSinkFactory.CreateDefaultPlaybackSink();
         if (_playback != null)
         {
-            _volumePlayback = new VolumeAudioSink(_playback) 
-            { 
+            _volumePlayback = new VolumeAudioSink(_playback)
+            {
                 Gain = (float)(SpeakerGainPercent / 100.0),
-                DspEnabled = SpeakerDspEnabled 
+                DspEnabled = SpeakerDspEnabled,
+                EchoCancellationEnabled = EchoCancellationEnabled
             };
         }
         
@@ -130,6 +133,7 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
             Dispatcher.UIThread.Post(() => Handle(@event)));
 
         _session.MicDspEnabled = MicDspEnabled;
+        _session.EchoCancellationEnabled = EchoCancellationEnabled;
 
         if (_microphone is not null)
         {
@@ -285,6 +289,7 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
         settings.MicGainPercent = MicGainPercent;
         settings.MicDspEnabled = MicDspEnabled;
         settings.SpeakerDspEnabled = SpeakerDspEnabled;
+        settings.EchoCancellationEnabled = EchoCancellationEnabled;
 
         NektoMe.Application.Services.SettingsService.Save(settings);
         
@@ -323,6 +328,9 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
     public partial bool SpeakerDspEnabled { get; set; } = true;
 
     [ObservableProperty]
+    public partial bool EchoCancellationEnabled { get; set; } = true;
+
+    [ObservableProperty]
     public partial bool? MicTestActive { get; set; } = false;
 
     partial void OnSpeakerGainPercentChanged(double value)
@@ -353,6 +361,16 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
         if (_volumePlayback != null)
         {
             _volumePlayback.DspEnabled = value;
+        }
+        SaveSettings(true);
+    }
+
+    partial void OnEchoCancellationEnabledChanged(bool value)
+    {
+        _session.EchoCancellationEnabled = value;
+        if (_volumePlayback != null)
+        {
+            _volumePlayback.EchoCancellationEnabled = value;
         }
         SaveSettings(true);
     }

@@ -862,8 +862,9 @@ public sealed class VoiceChatSession : IDisposable
         Events.Publish(new VoiceMediaEstablished(_peerConnectionId ?? string.Empty));
     }
 
-    private readonly AudioDynamicsProcessor _micDsp = new AudioDynamicsProcessor();
+    private readonly AudioDynamicsProcessor _micDsp = new AudioDynamicsProcessor() { IsMicrophone = true };
     public bool MicDspEnabled { get => _micDsp.IsEnabled; set => _micDsp.IsEnabled = value; }
+    public bool EchoCancellationEnabled { get => _micDsp.EchoCancellationEnabled; set => _micDsp.EchoCancellationEnabled = value; }
 
     private void OnMicrophonePcm(short[] pcm, int sampleRate)
     {

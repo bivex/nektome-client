@@ -29,6 +29,7 @@ public class AppSettings
     public double MicGainPercent { get; set; } = 200;
     public bool MicDspEnabled { get; set; } = true;
     public bool SpeakerDspEnabled { get; set; } = true;
+    public bool EchoCancellationEnabled { get; set; } = true;
 }
 
 public static class SettingsService
