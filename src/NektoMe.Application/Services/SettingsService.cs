@@ -1,0 +1,64 @@
+using System;
+using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace NektoMe.Application.Services;
+
+public class AppSettings
+{
+    // Proxy-Seller Settings
+    public string ProxySellerApiKey { get; set; } = string.Empty;
+    public string ProxySellerListName { get; set; } = "nektome_app";
+    public int ProxySellerPortsCount { get; set; } = 20;
+    public int ProxySellerRotationSeconds { get; set; } = 3600;
+    public string ProxySellerWhitelistIp { get; set; } = string.Empty;
+
+    // DSP Settings
+    public float NoiseGateThreshold { get; set; } = 0.005f;
+    public float CompressorThreshold { get; set; } = 0.3f;
+    public float CompressorRatio { get; set; } = 4.0f;
+    public float MakeupGain { get; set; } = 2.0f;
+
+    public string SavedProxies { get; set; } = string.Empty;
+
+    // App UI State
+    public string WebToken { get; set; } = string.Empty;
+    public string AndroidId { get; set; } = string.Empty;
+    public double SpeakerGainPercent { get; set; } = 100;
+    public double MicGainPercent { get; set; } = 200;
+    public bool MicDspEnabled { get; set; } = true;
+    public bool SpeakerDspEnabled { get; set; } = true;
+}
+
+public static class SettingsService
+{
+    private static readonly string ConfigPath = Path.Combine(AppContext.BaseDirectory, "config.json");
+    private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+
+    public static AppSettings Load()
+    {
+        if (File.Exists(ConfigPath))
+        {
+            try
+            {
+                var json = File.ReadAllText(ConfigPath);
+                return JsonSerializer.Deserialize<AppSettings>(json, Options) ?? new AppSettings();
+            }
+            catch
+            {
+                return new AppSettings();
+            }
+        }
+        return new AppSettings();
+    }
+
+    public static void Save(AppSettings settings)
+    {
+        try
+        {
+            File.WriteAllText(ConfigPath, JsonSerializer.Serialize(settings, Options));
+        }
+        catch { }
+    }
+}

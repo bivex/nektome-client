@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NektoMe.Application/NektoMe.Application.csproj" />
+    <Project Path="src/NektoMe.Domain/NektoMe.Domain.csproj" />
+    <Project Path="src/NektoMe.Infrastructure/NektoMe.Infrastructure.csproj" />
+    <Project Path="src/NektoMe.Ui/NektoMe.Ui.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NektoMe.Application.Tests/NektoMe.Application.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,42 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="480" d:DesignHeight="640"
+        x:Class="NektoMe.Ui.Views.RecaptchaWindow"
+        Title="NektoMe — Проверка reCAPTCHA"
+        Width="480" Height="640"
+        MinWidth="400" MinHeight="500"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="12">
+        <!-- Header -->
+        <Border Grid.Row="0" Margin="0,0,0,10" Padding="12,10"
+                Background="#18808080" CornerRadius="6">
+            <StackPanel Spacing="4">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="🛡" FontSize="16" VerticalAlignment="Center" />
+                    <TextBlock Text="Проверка Google reCAPTCHA" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Text="Нажмите 'Я не робот' ниже. Как только капча будет решена, окно закроется автоматически."
+                           TextWrapping="Wrap" FontSize="12" Opacity="0.85" />
+                <TextBlock x:Name="StatusText" Text="⏳ Ожидание загрузки страницы..."
+                           FontSize="11" Foreground="#4CAF50" Margin="0,2,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- WebView Container -->
+        <Border Grid.Row="1" Background="#10808080" CornerRadius="6" ClipToBounds="True">
+            <NativeWebView x:Name="CaptchaWebView" />
+        </Border>
+
+        <!-- Footer -->
+        <DockPanel Grid.Row="2" Margin="0,10,0,0">
+            <Button DockPanel.Dock="Left" Content="🔄 Перезагрузить"
+                    Click="OnReloadClicked" />
+            <Button DockPanel.Dock="Right" Content="Отмена"
+                    HorizontalAlignment="Right"
+                    Click="OnCancelClicked" />
+        </DockPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\NektoMe.Application\NektoMe.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
+    <PackageReference Include="Concentus" Version="2.2.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
+    <!-- Vendored from https://github.com/sipsorcery-org/sipsorcery at tag v10.0.16 (.git
+         stripped) with a local ICE nomination-stall fix: retransmit unconfirmed use-candidate
+         checks and fail fast (see "NEKTO PATCH" in net/ICE/RtpIceChannel.cs). -->
+    <ProjectReference Include="..\..\third_party\sipsorcery\src\SIPSorcery\SIPSorcery.csproj" />
+    <PackageReference Include="SocketIOClient" Version="4.0.5" />
+  </ItemGroup>
+
+</Project>

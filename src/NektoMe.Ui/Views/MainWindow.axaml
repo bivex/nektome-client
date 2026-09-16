@@ -1,0 +1,412 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:NektoMe.Ui.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="860" d:DesignHeight="640"
+        x:Class="NektoMe.Ui.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="NektoMe — anonymous chat"
+        Width="860" Height="640" MinWidth="620" MinHeight="440">
+
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <Window.Styles>
+        <Style Selector="Border.own">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Background" Value="#264F78" />
+        </Style>
+        <Style Selector="Border.anon">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Background" Value="#3A3A3A" />
+        </Style>
+    </Window.Styles>
+
+    <TabControl Margin="10">
+        <TabItem Header="Text chat">
+            <Grid Margin="0,8,0,0" RowDefinitions="Auto,Auto,*,Auto,Auto,180">
+
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Connect" Command="{Binding ConnectCommand}" />
+                    <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
+                    <Separator Margin="4,0" />
+                    <Button Content="Find partner" Command="{Binding SearchCommand}" />
+                    <Button Content="Stop" Command="{Binding StopSearchCommand}" />
+                    <Separator Margin="4,0" />
+                    <Button Content="Leave dialog" Command="{Binding LeaveCommand}" />
+                    <Separator Margin="4,0" />
+                    <Button Content="Clear log" Command="{Binding ClearLogCommand}" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Margin="0,6,0,4" Spacing="2">
+                    <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding OnlineSummary}" Opacity="0.75" />
+                    <TextBlock Text="{Binding TypingIndicator}" FontStyle="Italic" Opacity="0.75" />
+                </StackPanel>
+
+                <ListBox x:Name="MessagesList" Grid.Row="2" ItemsSource="{Binding Messages}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ChatLine">
+                            <Border Classes.own="{Binding IsOwn}"
+                                    Classes.anon="{Binding !IsOwn}"
+                                    CornerRadius="8"
+                                    Padding="10,6"
+                                    Margin="12,3"
+                                    MaxWidth="560">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding DisplayTime}" FontSize="11" Opacity="0.6" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,6,0,0"
+                            Spacing="8" IsVisible="{Binding CaptchaVisible}">
+                    <TextBlock Text="Captcha:" VerticalAlignment="Center" />
+                    <TextBox Text="{Binding CaptchaSolution, Mode=TwoWay}" Width="220"
+                             PlaceholderText="solution" />
+                    <Button Content="Verify" Command="{Binding VerifyCaptchaCommand}" />
+                </StackPanel>
+
+                <Grid Grid.Row="4" Margin="0,8,0,0" ColumnDefinitions="*,Auto">
+                    <TextBox x:Name="InputBox" Grid.Column="0"
+                             Text="{Binding InputText, Mode=TwoWay}"
+                             PlaceholderText="Type a message… (Enter to send)"
+                             AcceptsReturn="False" />
+                    <Button Grid.Column="1" Content="Send" Margin="8,0,0,0"
+                            Command="{Binding SendCommand}"
+                            HorizontalAlignment="Stretch" />
+                </Grid>
+
+                <ListBox x:Name="LogList" Grid.Row="5" Margin="0,8,0,0" ItemsSource="{Binding Log}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="11" Opacity="0.8"
+                                       TextWrapping="NoWrap" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </TabItem>
+
+        <TabItem Header="Voice roulette">
+            <Grid x:Name="VoicePanel" x:DataType="vm:VoiceViewModel"
+                  Margin="0,8,0,0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto">
+
+                <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                    <!-- Connection -->
+                    <Border Background="#0A808080" CornerRadius="4" Padding="4" Margin="0,0,8,4">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="Connect" Command="{Binding VoiceConnectCommand}" />
+                            <Button Content="Disconnect" Command="{Binding VoiceDisconnectCommand}" />
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Search -->
+                    <Border Background="#1A808080" CornerRadius="4" Padding="4" Margin="0,0,8,4">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="Find peer" Command="{Binding VoiceSearchCommand}" Classes="accent" FontWeight="SemiBold" />
+                            <Button Content="Stop" Command="{Binding VoiceStopSearchCommand}" />
+                            <CheckBox Content="Auto-next" IsChecked="{Binding AutoNext}" VerticalAlignment="Center" Margin="2,0,4,0" FontSize="13" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Utils -->
+                    <Border Background="#0A808080" CornerRadius="4" Padding="4" Margin="0,0,8,4">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="Refresh online" Command="{Binding VoiceRefreshCountCommand}" />
+                            <Button Content="New ID" Command="{Binding VoiceResetIdentityCommand}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Log Controls -->
+                    <Border Background="#0A808080" CornerRadius="4" Padding="4" Margin="0,0,0,4">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="Copy log" Command="{Binding VoiceCopyLogCommand}" CommandParameter="{Binding #VoiceLogList}" />
+                            <Button Content="Clear log" Command="{Binding VoiceClearLogCommand}" />
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,6,0,2">
+                    <Border Background="#14808080" CornerRadius="4" Padding="6,3">
+                        <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                            <TextBlock Text="Я:" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="11" />
+                            <ComboBox ItemsSource="{Binding UserSexOptions}"
+                                      SelectedItem="{Binding SelectedUserSex, Mode=TwoWay}"
+                                      FontSize="11" Height="26" VerticalAlignment="Center" MinWidth="95" />
+                            <TextBlock Text="Возраст:" VerticalAlignment="Center" Opacity="0.75" FontSize="11" Margin="3,0,0,0" />
+                            <ComboBox ItemsSource="{Binding AgePresetOptions}"
+                                      SelectedItem="{Binding SelectedUserAgePreset, Mode=TwoWay}"
+                                      FontSize="11" Height="26" VerticalAlignment="Center" MinWidth="110" />
+                            <TextBox Text="{Binding UserAgeFromFilter, Mode=TwoWay}" Width="36" FontSize="11"
+                                     PlaceholderText="от" VerticalAlignment="Center" ToolTip.Tip="Ваш возраст (от)"
+                                     IsVisible="{Binding IsCustomUserAge}" />
+                            <TextBlock Text="—" VerticalAlignment="Center" Opacity="0.5" FontSize="11"
+                                       IsVisible="{Binding IsCustomUserAge}" />
+                            <TextBox Text="{Binding UserAgeToFilter, Mode=TwoWay}" Width="36" FontSize="11"
+                                     PlaceholderText="до" VerticalAlignment="Center" ToolTip.Tip="Ваш возраст (до)"
+                                     IsVisible="{Binding IsCustomUserAge}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#14808080" CornerRadius="4" Padding="6,3">
+                        <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                            <TextBlock Text="Ищу:" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="11" />
+                            <ComboBox ItemsSource="{Binding PeerSexOptions}"
+                                      SelectedItem="{Binding SelectedPeerSex, Mode=TwoWay}"
+                                      FontSize="11" Height="26" VerticalAlignment="Center" MinWidth="95" />
+                            <TextBlock Text="Возраст:" VerticalAlignment="Center" Opacity="0.75" FontSize="11" Margin="3,0,0,0" />
+                            <ComboBox ItemsSource="{Binding AgePresetOptions}"
+                                      SelectedItem="{Binding SelectedPeerAgePreset, Mode=TwoWay}"
+                                      FontSize="11" Height="26" VerticalAlignment="Center" MinWidth="110" />
+                            <TextBox Text="{Binding AgeFromFilter, Mode=TwoWay}" Width="36" FontSize="11"
+                                     PlaceholderText="от" VerticalAlignment="Center" ToolTip.Tip="Возраст собеседника (от)"
+                                     IsVisible="{Binding IsCustomPeerAge}" />
+                            <TextBlock Text="—" VerticalAlignment="Center" Opacity="0.5" FontSize="11"
+                                       IsVisible="{Binding IsCustomPeerAge}" />
+                            <TextBox Text="{Binding AgeToFilter, Mode=TwoWay}" Width="36" FontSize="11"
+                                     PlaceholderText="до" VerticalAlignment="Center" ToolTip.Tip="Возраст собеседника (до)"
+                                     IsVisible="{Binding IsCustomPeerAge}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Margin="0,4,0,4" Spacing="4">
+                    <!-- Configuration Cards -->
+                    <WrapPanel Orientation="Horizontal" Margin="0,4,0,4">
+                        <!-- Server & Engine settings -->
+                        <Border Background="#14808080" CornerRadius="4" Padding="6" Margin="0,0,4,4">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Движок и Сеть" FontWeight="SemiBold" FontSize="11" Opacity="0.8" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="Mode:" VerticalAlignment="Center" Opacity="0.75" FontSize="11" />
+                                    <Button Content="{Binding ModeBadgeText}" Command="{Binding VoiceToggleModeCommand}" FontSize="11" Padding="6,2" FontWeight="SemiBold" ToolTip.Tip="Переключить между Android и Web" />
+                                    <TextBlock Text="Server:" VerticalAlignment="Center" Opacity="0.75" FontSize="11" Margin="4,0,0,0" />
+                                    <Button Content="{Binding ServerHost}" Command="{Binding VoiceToggleServerCommand}" FontSize="11" Padding="6,2" />
+                                    <TextBlock Text="WS:" VerticalAlignment="Center" Opacity="0.75" FontSize="11" Margin="4,0,0,0" />
+                                    <Button Content="{Binding WsBackendBadgeText}" Command="{Binding VoiceToggleWsBackendCommand}" FontSize="11" Padding="6,2" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Device settings -->
+                        <Border Background="#14808080" CornerRadius="4" Padding="6" Margin="0,0,4,4">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Устройство" FontWeight="SemiBold" FontSize="11" Opacity="0.8" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="Device:" VerticalAlignment="Center" Opacity="0.75" FontSize="11" />
+                                    <TextBlock Text="{Binding CurrentDeviceName}" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="11" />
+                                    <Button Content="🎲 Device" Command="{Binding VoiceRandomizeDeviceCommand}" FontSize="11" Padding="6,2" Margin="4,0,0,0" />
+                                    <Button Content="🎲 Всё" Command="{Binding VoiceRandomizeAllCommand}" FontSize="11" Padding="6,2" FontWeight="SemiBold" />
+                                    <Button Content="📥 Эмулятор" Command="{Binding VoiceImportFromEmulatorCommand}" FontSize="11" Padding="6,2" ToolTip.Tip="Импорт сессии из Android" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Identity Bar (Token/Android ID) -->
+                        <Border Background="#12808080" CornerRadius="4" Padding="6" Margin="0,0,4,4">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Отпечаток (Identity)" FontWeight="SemiBold" FontSize="11" Opacity="0.8" />
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsWebMode}">
+                                        <TextBlock Text="Web-токен:" VerticalAlignment="Center" Opacity="0.75" FontSize="11" />
+                                        <TextBox Text="{Binding WebTokenInput, Mode=TwoWay}" Width="160" FontSize="11" PlaceholderText="authToken" VerticalAlignment="Center" />
+                                        <Button Content="✓ Применить" Command="{Binding VoiceApplyWebTokenCommand}" FontSize="11" Padding="6,2" FontWeight="SemiBold" />
+                                        <Button Content="📋" Command="{Binding VoicePasteWebTokenCommand}" FontSize="11" Padding="6,2" ToolTip.Tip="Вставить" />
+                                        <Button Content="🎲" Command="{Binding VoiceResetIdentityCommand}" FontSize="11" Padding="6,2" ToolTip.Tip="Новый токен" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding !IsWebMode}">
+                                        <TextBlock Text="Android ID:" VerticalAlignment="Center" Opacity="0.75" FontSize="11" />
+                                        <TextBox Text="{Binding AndroidIdInput, Mode=TwoWay}" Width="160" FontSize="11" PlaceholderText="google-..." VerticalAlignment="Center" />
+                                        <Button Content="✓ Применить" Command="{Binding VoiceApplyAndroidIdCommand}" FontSize="11" Padding="6,2" FontWeight="SemiBold" />
+                                        <Button Content="🎲 Новый" Command="{Binding VoiceResetIdentityCommand}" FontSize="11" Padding="6,2" ToolTip.Tip="Новый ID" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Proxy settings -->
+                        <Border Background="#14808080" CornerRadius="4" Padding="6" Margin="0,0,4,4">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Прокси-сервер (Резиденты / SOCKS5)" FontWeight="SemiBold" FontSize="11" Opacity="0.8" />
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBox Text="{Binding ProxyUrl, Mode=TwoWay}" Width="150" FontSize="11" PlaceholderText="socks5://..." VerticalAlignment="Center" />
+                                    <Button Content="◀" Command="{Binding VoiceRotatePrevProxyCommand}" FontSize="11" Padding="5,2" />
+                                    <Button Content="▶" Command="{Binding VoiceRotateProxyCommand}" FontSize="11" Padding="5,2" />
+                                    <Button Content="🔄 Получить из Proxy-Seller" Command="{Binding FetchProxySellerCommand}" FontSize="11" Padding="6,2" FontWeight="SemiBold" Margin="4,0,0,0" />
+                                    <TextBlock Text="Активный:" VerticalAlignment="Center" Opacity="0.75" FontSize="11" Margin="4,0,0,0" />
+                                    <TextBlock Text="{Binding ActiveProxyDisplay}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#3B82F6" FontSize="11" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </WrapPanel>
+
+                    <Expander Header="⚙️ Настройки Proxy-Seller и Аудио" Margin="0,0,0,4">
+                        <StackPanel Spacing="6" Margin="4">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="Proxy-Seller API Ключ:" VerticalAlignment="Center" FontSize="11" />
+                                <TextBox Text="{Binding ProxySellerApiKeyInput, Mode=TwoWay}" Width="150" FontSize="11" PasswordChar="•" />
+                                <Button Content="Сохранить" Command="{Binding SaveSettingsCommand}" FontSize="11" Padding="6,2" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
+
+                    <TextBlock Text="{Binding VoiceStatusText}" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding VoiceOnlineSummary}" Opacity="0.75" />
+                        <TextBlock Text="{Binding VoiceTalkingText}" Opacity="0.75" />
+                        <TextBlock Text="{Binding VoiceMediaState, StringFormat='media: {0}'}" Opacity="0.75" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding VoicePeerText, StringFormat='peer: {0}'}" Opacity="0.75" />
+                        <TextBlock Text="peer is muted" FontStyle="Italic"
+                                   IsVisible="{Binding VoicePeerMuted}" Opacity="0.75" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,2,0,0"
+                            Spacing="8" IsVisible="{Binding VoiceInChat}">
+                    <Button IsVisible="{Binding !VoiceMuted}" Content="Mute"
+                            Command="{Binding VoiceMuteCommand}" />
+                    <Button IsVisible="{Binding VoiceMuted}" Content="Unmute"
+                            Command="{Binding VoiceMuteCommand}" />
+                    <Button Content="Hang up" Command="{Binding VoiceHangupCommand}" />
+                    <Button Content="Report trouble" Command="{Binding VoiceTroubleCommand}" />
+                </StackPanel>
+
+                <Border Grid.Row="4" Margin="0,8,0,0" Padding="12"
+                        Background="#15808080" CornerRadius="6"
+                        IsVisible="{Binding CaptchaVisible}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="{Binding CaptchaChallengeText}" FontWeight="SemiBold" />
+
+                        <!-- Image Captcha (Android mode or when image URL is provided) -->
+                        <StackPanel Spacing="8" IsVisible="{Binding !IsRecaptcha}">
+                            <Border Background="#FFFFFF" CornerRadius="6" Padding="6"
+                                    BorderBrush="#3B82F6" BorderThickness="2"
+                                    HorizontalAlignment="Left" MinWidth="220" MinHeight="70">
+                                <Image Source="{Binding CaptchaImageBitmap}"
+                                       MaxWidth="340" MaxHeight="100"
+                                       RenderOptions.BitmapInterpolationMode="HighQuality"
+                                       Stretch="Uniform" />
+                            </Border>
+
+                            <TextBlock Text="⚠️ ВНИМАНИЕ: Регистр букв важен (Aa/Bb)! Две ошибки подряд приведут к бану IP."
+                                       Foreground="#EF4444" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock Text="Если текст неразборчив — не угадывайте, нажмите '🔄 Другая картинка'!"
+                                       Opacity="0.8" FontSize="11" TextWrapping="Wrap" />
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBox x:Name="VoiceCaptchaInput"
+                                         Text="{Binding CaptchaSolution, Mode=TwoWay}" Width="160"
+                                         FontSize="13" FontWeight="Bold"
+                                         PlaceholderText="Текст с картинки">
+                                    <TextBox.KeyBindings>
+                                        <KeyBinding Gesture="Enter" Command="{Binding VoiceSubmitCaptchaCommand}" />
+                                    </TextBox.KeyBindings>
+                                </TextBox>
+                                <Button Content="Отправить (Enter)" Command="{Binding VoiceSubmitCaptchaCommand}"
+                                        FontWeight="Bold" />
+                                <Button Content="🔄 Другая картинка" Command="{Binding VoiceRefreshCaptchaCommand}"
+                                        ToolTip.Tip="Запросить другую, более разборчивую картинку без риска бана" />
+                                <Button Content="Отмена поиска" Command="{Binding VoiceStopSearchCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- reCAPTCHA v2 (Web Browser mode) -->
+                        <StackPanel Spacing="8" IsVisible="{Binding IsRecaptcha}">
+                            <TextBlock Text="В Web-режиме сервер запрашивает проверку Google reCAPTCHA v2."
+                                       TextWrapping="Wrap" FontSize="12" Opacity="0.9" />
+
+                            <WrapPanel Orientation="Horizontal">
+                                <Button Content="🛡 Решить reCAPTCHA в окне (WebKit)"
+                                        Command="{Binding VoiceOpenRecaptchaWindowCommand}"
+                                        FontWeight="Bold" Margin="0,0,8,6" />
+                                <Button Content="📥 Взять сессию из Chrome"
+                                        Command="{Binding VoiceAutoImportTokenFromChromeCommand}"
+                                        FontWeight="SemiBold" Margin="0,0,8,6" />
+                                <Button Content="📱 В режим Android (фото-капча)"
+                                        Command="{Binding VoiceSwitchToAndroidCommand}"
+                                        Margin="0,0,8,6" />
+                            </WrapPanel>
+
+                            <Expander Header="Ручной ввод токенов (дополнительно)" IsExpanded="False" Margin="0,2,0,0">
+                                <StackPanel Spacing="8" Margin="0,4,0,0">
+                                    <TextBlock Text="Web authToken:" FontSize="11" Opacity="0.8" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Text="{Binding WebTokenInput, Mode=TwoWay}" Width="280"
+                                                 PlaceholderText="Вставьте authToken..." />
+                                        <Button Content="✓ Применить" Command="{Binding VoiceApplyWebTokenAndSearchCommand}" />
+                                        <Button Content="📋 Вставить" Command="{Binding VoicePasteWebTokenCommand}" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="Токен решения капчи (g-recaptcha-response):" FontSize="11" Opacity="0.8" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Text="{Binding CaptchaSolution, Mode=TwoWay}" Width="280"
+                                                 PlaceholderText="03AFc..." />
+                                        <Button Content="Отправить токен" Command="{Binding VoiceSubmitCaptchaCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <ListBox x:Name="VoiceLogList" Grid.Row="5" Margin="0,8,0,0" ItemsSource="{Binding VoiceLog}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="11" Opacity="0.8"
+                                       TextWrapping="NoWrap" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Bottom Bar: Microphone Volume and Controls -->
+                <Border Grid.Row="6" Margin="0,8,0,0" Padding="10,6"
+                        Background="#14808080" CornerRadius="6" BorderBrush="#20808080" BorderThickness="1">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                        <!-- Left: Mic icon and status text -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding MicStatusIcon}" FontSize="14" VerticalAlignment="Center" />
+                            <TextBlock Text="Микрофон:" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding MicLevelText}" FontSize="11" FontWeight="SemiBold" Width="44" VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <!-- Center: Real-time VU Meter -->
+                        <Grid Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                            <ProgressBar Height="12" Minimum="0" Maximum="100"
+                                         Value="{Binding MicLevel}"
+                                         Foreground="{Binding MicLevelBrush}"
+                                         Background="#20808080"
+                                         CornerRadius="3" />
+                        </Grid>
+
+                        <!-- Right: Audio Levels -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="Динамик:" FontSize="11" Opacity="0.75" VerticalAlignment="Center" />
+                            <Slider Minimum="0" Maximum="400" Value="{Binding SpeakerGainPercent, Mode=TwoWay}" Width="75" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding SpeakerGainText}" FontSize="11" Width="36" Opacity="0.75" VerticalAlignment="Center" Margin="0,0,8,0" />
+
+                            <CheckBox IsChecked="{Binding SpeakerDspEnabled, Mode=TwoWay}" Content="Шум/Комп (Дин)" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+
+                            <TextBlock Text="Микрофон:" FontSize="11" Opacity="0.75" VerticalAlignment="Center" />
+                            <Slider Minimum="0" Maximum="400" Value="{Binding MicGainPercent, Mode=TwoWay}" Width="75" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding MicGainText}" FontSize="11" Width="36" Opacity="0.75" VerticalAlignment="Center" />
+                            <CheckBox IsChecked="{Binding MicDspEnabled, Mode=TwoWay}" Content="Шум/Комп (Микр)" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        </StackPanel>
+
+                        <!-- Far Right: Mic Test Toggle Button -->
+                        <ToggleButton Grid.Column="3" Content="🎤 Тест" IsChecked="{Binding MicTestActive, Mode=TwoWay}"
+                                      FontSize="11" Padding="8,3" VerticalAlignment="Center"
+                                      ToolTip.Tip="Включить микрофон для проверки звука" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </TabItem>
+    </TabControl>
+</Window>
