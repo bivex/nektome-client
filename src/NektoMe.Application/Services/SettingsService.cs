@@ -27,6 +27,7 @@ public class AppSettings
     public string AndroidId { get; set; } = string.Empty;
     public double SpeakerGainPercent { get; set; } = 100;
     public double MicGainPercent { get; set; } = MicGainDefaultPercent;
+    public bool MicAgcEnabled { get; set; } = true;
     public bool MicDspEnabled { get; set; } = true;
     public bool SpeakerDspEnabled { get; set; } = true;
     public bool EchoCancellationEnabled { get; set; } = true;

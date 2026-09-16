@@ -102,6 +102,7 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
         ProxySellerApiKeyInput = appSettings.ProxySellerApiKey;
         SpeakerGainPercent = appSettings.SpeakerGainPercent;
         MicGainPercent = appSettings.MicGainPercent;
+        MicAgcEnabled = appSettings.MicAgcEnabled;
         MicDspEnabled = appSettings.MicDspEnabled;
         SpeakerDspEnabled = appSettings.SpeakerDspEnabled;
         EchoCancellationEnabled = appSettings.EchoCancellationEnabled;
@@ -133,6 +134,7 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
             Dispatcher.UIThread.Post(() => Handle(@event)));
 
         _session.MicDspEnabled = MicDspEnabled;
+        _session.MicAgcEnabled = MicAgcEnabled;
         _session.EchoCancellationEnabled = EchoCancellationEnabled;
 
         if (_microphone is not null)
@@ -287,6 +289,7 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
         settings.AndroidId = AndroidIdInput;
         settings.SpeakerGainPercent = SpeakerGainPercent;
         settings.MicGainPercent = MicGainPercent;
+        settings.MicAgcEnabled = MicAgcEnabled;
         settings.MicDspEnabled = MicDspEnabled;
         settings.SpeakerDspEnabled = SpeakerDspEnabled;
         settings.EchoCancellationEnabled = EchoCancellationEnabled;
@@ -322,6 +325,9 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
     public partial string SpeakerGainText { get; set; } = "100%";
 
     [ObservableProperty]
+    public partial bool MicAgcEnabled { get; set; } = true;
+
+    [ObservableProperty]
     public partial bool MicDspEnabled { get; set; } = true;
 
     [ObservableProperty]
@@ -347,6 +353,12 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
     {
         MicGainText = $"{Math.Round(value)}%";
         _session.MicGain = (float)(value / 100.0);
+        SaveSettings(true);
+    }
+
+    partial void OnMicAgcEnabledChanged(bool value)
+    {
+        _session.MicAgcEnabled = value;
         SaveSettings(true);
     }
 

@@ -866,6 +866,13 @@ public sealed class VoiceChatSession : IDisposable
     public bool MicDspEnabled { get => _micDsp.IsEnabled; set => _micDsp.IsEnabled = value; }
     public bool EchoCancellationEnabled { get => _micDsp.EchoCancellationEnabled; set => _micDsp.EchoCancellationEnabled = value; }
 
+    // Speech AGC runs ahead of the dynamics DSP: it normalizes quiet speech to
+    // a healthy send level regardless of the mic's sensitivity, so the DSP
+    // gate/compressor always work in their intended range. Independent of
+    // MicDspEnabled — quiet-mic compensation must survive DSP experiments.
+    private readonly SpeechAgcProcessor _micAgc = new SpeechAgcProcessor();
+    public bool MicAgcEnabled { get => _micAgc.IsEnabled; set => _micAgc.IsEnabled = value; }
+
     // Mic level logging: publishes one throttled diagnostic per interval so the
     // log shows what the peer actually receives (post-DSP, post-gain) versus the
     // raw capture. This is how a dead-silent "they can't hear me" is diagnosed.
@@ -904,8 +911,10 @@ public sealed class VoiceChatSession : IDisposable
             return;
         }
 
-        _micDsp.SetSampleRate(sampleRate);
+        _micAgc.SetSampleRate(sampleRate);
         (double rawRms, double rawPeak) = MeasureLevels(pcm);
+        _micAgc.Process(pcm);
+        _micDsp.SetSampleRate(sampleRate);
         _micDsp.Process(pcm);
 
         if (Math.Abs(MicGain - 1.0f) > 0.01f)
@@ -924,7 +933,7 @@ public sealed class VoiceChatSession : IDisposable
             _lastMicLevelLogUtc = now;
             (double outRms, double outPeak) = MeasureLevels(pcm);
             Events.Publish(new VoiceDiagnosticMessage(
-                $"🔬 Микрофон: вход {FormatDbfs(rawRms, rawPeak)} → в эфир {FormatDbfs(outRms, outPeak)}; усиление {MicGain * 100:F0}%"));
+                $"🔬 Микрофон: вход {FormatDbfs(rawRms, rawPeak)} → в эфир {FormatDbfs(outRms, outPeak)}; усиление {MicGain * 100:F0}% × AGC {_micAgc.CurrentGain:F1}x"));
         }
 
         _engine?.PushMicrophonePcm(pcm, sampleRate);
