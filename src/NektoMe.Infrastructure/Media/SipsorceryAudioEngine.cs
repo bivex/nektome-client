@@ -509,37 +509,40 @@ public sealed class SipsorceryAudioEngine : IAudioEngine
     {
         _closed = true;
         TurnTcpForwarder? forwarder;
+        RTCPeerConnection? pcToClose;
         lock (_gate)
         {
             forwarder = _forwarder;
             _forwarder = null;
+            
+            pcToClose = _peerConnection;
         }
 
         forwarder?.Dispose();
 
         _microphone.Clear();
-        lock (_gate)
+        
+        try
         {
-            try
-            {
-                _peerConnection?.Close("client closed");
-            }
-            catch (Exception)
-            {
-                // Closing an unconnected session is harmless here.
-            }
+            pcToClose?.Close("client closed");
+        }
+        catch (Exception)
+        {
+            // Closing an unconnected session is harmless here.
         }
     }
 
     public void Dispose()
     {
         Close();
+        RTCPeerConnection? pcToDispose;
         lock (_gate)
         {
-            _peerConnection?.Dispose();
+            pcToDispose = _peerConnection;
             _peerConnection = null;
         }
-
+        
+        pcToDispose?.Dispose();
         _dump?.Dispose();
     }
 
