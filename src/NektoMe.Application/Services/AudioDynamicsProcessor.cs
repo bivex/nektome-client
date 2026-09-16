@@ -32,13 +32,20 @@ public sealed class AudioDynamicsProcessor
         // alpha = exp(-1.0 / (time_sec * sample_rate))
         _attackCoef = (float)Math.Exp(-1.0 / (0.002 * sampleRate)); // 2ms attack
         _releaseCoef = (float)Math.Exp(-1.0 / (0.100 * sampleRate)); // 100ms release
+        // Ducking ramps: fast mute (no echo leak), slow reopen (no clicks/chopping
+        // on the short pauses between the peer's words). Per-sample step factors:
+        // alpha = 1 - exp(-1 / (time_sec * sample_rate)) for y += (target - y) * alpha.
+        _duckAttackCoef = 1f - (float)Math.Exp(-1.0 / (0.002 * sampleRate)); // 2ms
+        _duckReleaseCoef = 1f - (float)Math.Exp(-1.0 / (0.080 * sampleRate)); // 80ms
     }
 
     // Echo Suppression
     public bool IsMicrophone { get; set; } = false;
     public bool EchoCancellationEnabled { get; set; } = true;
-    private static float _sharedSpeakerEnvelope = 0f;
     private static DateTime _speakerHoldUntil = DateTime.MinValue;
+    private float _duckGain = 1f; // smoothed echo-ducking gain, 1 = open, 0.01 = ducked
+    private float _duckAttackCoef;
+    private float _duckReleaseCoef;
 
     public void Process(short[] pcm)
     {
@@ -54,40 +61,32 @@ public sealed class AudioDynamicsProcessor
         float makeupGain = MakeupGain;
 
         // Echo Suppression calculations
-        float echoDuckingGain = 1.0f;
+        bool duckTarget = false;
         if (EchoCancellationEnabled)
         {
             if (!IsMicrophone)
             {
-                // We are processing speaker output, update the shared envelope
+                // We are processing speaker output: a loud block arms the shared
+                // suppression hold on the mic side.
                 float localPeak = 0f;
                 for (int i = 0; i < pcm.Length; i++)
                 {
                     float val = Math.Abs(pcm[i] / maxSample);
                     if (val > localPeak) localPeak = val;
                 }
-                
+
                 if (localPeak > 0.01f)
                 {
-                    _sharedSpeakerEnvelope = localPeak;
                     // Hold the suppression for 250ms to account for room reverb and hardware delay
                     _speakerHoldUntil = DateTime.UtcNow.AddMilliseconds(250);
                 }
             }
             else
             {
-                // We are processing microphone input, apply ducking if speaker is active.
-                // Gate on the hold timer only: it is refreshed by every loud speaker
-                // block, so the mic recovers 250ms after speech stops.
-                if (DateTime.UtcNow < _speakerHoldUntil)
-                {
-                    // Duck the microphone severely when the speaker is active
-                    echoDuckingGain = 0.01f; // -40dB suppression
-                }
-                else
-                {
-                    _sharedSpeakerEnvelope = 0f;
-                }
+                // We are processing microphone input: duck while the speaker hold
+                // is armed. Gate on the hold timer only — it is refreshed by every
+                // loud speaker block, so the mic recovers 250ms after speech stops.
+                duckTarget = DateTime.UtcNow < _speakerHoldUntil;
             }
         }
 
@@ -95,6 +94,12 @@ public sealed class AudioDynamicsProcessor
         {
             float sample = pcm[i] / maxSample;
             float absSample = Math.Abs(sample);
+
+            // Smooth the echo-ducking gain toward its target so block-boundary
+            // jumps never click. Attack while the speaker is active, release after.
+            float duckTargetGain = duckTarget ? 0.01f : 1.0f; // -40dB suppression
+            float duckCoef = duckTarget ? _duckAttackCoef : _duckReleaseCoef;
+            _duckGain += (duckTargetGain - _duckGain) * duckCoef;
 
             // Envelope detection (peak)
             if (absSample > _envelope)
@@ -125,7 +130,7 @@ public sealed class AudioDynamicsProcessor
             }
 
             // Apply gain, makeup gain, and echo ducking
-            sample *= gain * makeupGain * echoDuckingGain;
+            sample *= gain * makeupGain * _duckGain;
 
             // Hard clip to avoid integer overflow clicking
             if (sample > 0.999f) sample = 0.999f;
