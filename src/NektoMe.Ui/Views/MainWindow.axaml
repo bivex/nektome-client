@@ -395,7 +395,8 @@
                             <CheckBox IsChecked="{Binding SpeakerDspEnabled, Mode=TwoWay}" Content="Шум/Комп (Дин)" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
 
                             <TextBlock Text="Микрофон:" FontSize="11" Opacity="0.75" VerticalAlignment="Center" />
-                            <Slider Minimum="0" Maximum="400" Value="{Binding MicGainPercent, Mode=TwoWay}" Width="75" VerticalAlignment="Center" />
+                            <Slider Minimum="25" Maximum="400" Value="{Binding MicGainPercent, Mode=TwoWay}" Width="75" VerticalAlignment="Center"
+                                    ToolTip.Tip="Ниже 25% нельзя: 0% отправляет тишину собеседнику" />
                             <TextBlock Text="{Binding MicGainText}" FontSize="11" Width="36" Opacity="0.75" VerticalAlignment="Center" />
                             <CheckBox IsChecked="{Binding MicDspEnabled, Mode=TwoWay}" Content="Шум/Комп (Микр)" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
                             <CheckBox IsChecked="{Binding EchoCancellationEnabled, Mode=TwoWay}" Content="Эхо" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0"
