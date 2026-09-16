@@ -30,6 +30,17 @@ public class AppSettings
     public bool MicDspEnabled { get; set; } = true;
     public bool SpeakerDspEnabled { get; set; } = true;
     public bool EchoCancellationEnabled { get; set; } = true;
+
+    // The mic slider has no 0% stop: at 0% every mic sample is multiplied by
+    // zero and digital silence goes to the peer ("they can't hear me").
+    public const double MicGainMinPercent = 25;
+    public const double MicGainMaxPercent = 400;
+
+    /// <summary>Fixes out-of-range values from configs written by older builds.</summary>
+    public void Normalize()
+    {
+        MicGainPercent = Math.Clamp(MicGainPercent, MicGainMinPercent, MicGainMaxPercent);
+    }
 }
 
 public static class SettingsService
@@ -39,19 +50,22 @@ public static class SettingsService
 
     public static AppSettings Load()
     {
+        var settings = new AppSettings();
         if (File.Exists(ConfigPath))
         {
             try
             {
                 var json = File.ReadAllText(ConfigPath);
-                return JsonSerializer.Deserialize<AppSettings>(json, Options) ?? new AppSettings();
+                settings = JsonSerializer.Deserialize<AppSettings>(json, Options) ?? new AppSettings();
             }
             catch
             {
-                return new AppSettings();
+                settings = new AppSettings();
             }
         }
-        return new AppSettings();
+
+        settings.Normalize();
+        return settings;
     }
 
     public static void Save(AppSettings settings)
