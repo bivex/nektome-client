@@ -8,6 +8,8 @@ using SDPWellKnownMediaFormatsEnum = SIPSorceryMedia.Abstractions.SDPWellKnownMe
 
 namespace NektoMe.Infrastructure.Media;
 
+#pragma warning disable CS0618 // Concentus obsolete warnings
+
 /// <summary>
 /// <see cref="IAudioEngine"/> backed by SIPSorcery's <see cref="RTCPeerConnection"/>.
 /// Audio is negotiated PCMU-only and pumped as a continuous 20 ms stream: silence
@@ -598,7 +600,7 @@ public sealed class SipsorceryAudioEngine : IAudioEngine
                 _sink.Write(G711.Decode(packet.Header.PayloadType, payload), G711.SampleRate);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // A failing sink must not kill the receive path.
             // Diagnostic?.Invoke($"Decode error: {ex.Message}");

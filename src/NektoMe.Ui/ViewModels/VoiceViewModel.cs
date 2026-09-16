@@ -57,25 +57,32 @@ public partial class VoiceViewModel : ViewModelBase, IDisposable
     {
         private readonly IAudioSink _inner;
         private readonly NektoMe.Application.Services.AudioDynamicsProcessor _dsp = new NektoMe.Application.Services.AudioDynamicsProcessor();
+        private readonly object _lock = new object();
+
         public float Gain { get; set; } = 1.0f;
         public bool DspEnabled { get => _dsp.IsEnabled; set => _dsp.IsEnabled = value; }
 
         public VolumeAudioSink(IAudioSink inner) { _inner = inner; }
+        
         public void Write(short[] pcm, int sampleRate)
         {
-            _dsp.SetSampleRate(sampleRate);
-            _dsp.Process(pcm);
-
-            if (Math.Abs(Gain - 1.0f) > 0.01f)
+            lock (_lock)
             {
-                for (int i = 0; i < pcm.Length; i++)
+                _dsp.SetSampleRate(sampleRate);
+                _dsp.Process(pcm);
+
+                if (Math.Abs(Gain - 1.0f) > 0.01f)
                 {
-                    float val = pcm[i] * Gain;
-                    pcm[i] = (short)Math.Clamp(val, short.MinValue, short.MaxValue);
+                    for (int i = 0; i < pcm.Length; i++)
+                    {
+                        float val = pcm[i] * Gain;
+                        pcm[i] = (short)Math.Clamp(val, short.MinValue, short.MaxValue);
+                    }
                 }
+                _inner.Write(pcm, sampleRate);
             }
-            _inner.Write(pcm, sampleRate);
         }
+        
         public void Dispose() => (_inner as IDisposable)?.Dispose();
     }
 
