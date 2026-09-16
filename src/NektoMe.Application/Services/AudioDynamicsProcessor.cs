@@ -43,7 +43,7 @@ public sealed class AudioDynamicsProcessor
     public bool IsMicrophone { get; set; } = false;
     public bool EchoCancellationEnabled { get; set; } = true;
     private static DateTime _speakerHoldUntil = DateTime.MinValue;
-    private float _duckGain = 1f; // smoothed echo-ducking gain, 1 = open, 0.01 = ducked
+    private float _duckGain = 1f; // smoothed echo-ducking gain, 1 = open, 0.05 = ducked
     private float _duckAttackCoef;
     private float _duckReleaseCoef;
 
@@ -75,7 +75,10 @@ public sealed class AudioDynamicsProcessor
                     if (val > localPeak) localPeak = val;
                 }
 
-                if (localPeak > 0.01f)
+                // Threshold 0.1 (-20 dBFS): only real speech playback may arm the
+                // hold. A 0.01 threshold also caught the peer's room noise, which
+                // kept the hold alive forever and muted our mic the whole call.
+                if (localPeak > 0.1f)
                 {
                     // Hold the suppression for 250ms to account for room reverb and hardware delay
                     _speakerHoldUntil = DateTime.UtcNow.AddMilliseconds(250);
@@ -97,7 +100,9 @@ public sealed class AudioDynamicsProcessor
 
             // Smooth the echo-ducking gain toward its target so block-boundary
             // jumps never click. Attack while the speaker is active, release after.
-            float duckTargetGain = duckTarget ? 0.01f : 1.0f; // -40dB suppression
+            // Floor 0.05 (-26 dB): strong enough to kill the echo, but a talk-over
+            // stays faintly audible instead of a hard mute ("they can't hear me").
+            float duckTargetGain = duckTarget ? 0.05f : 1.0f;
             float duckCoef = duckTarget ? _duckAttackCoef : _duckReleaseCoef;
             _duckGain += (duckTargetGain - _duckGain) * duckCoef;
 
