@@ -21,8 +21,8 @@ public sealed class VoiceChatSessionTests
         "{\"type\":\"offer\",\"connectionId\":\"p1\",\"offer\":" +
         JsonSerializer.Serialize(JsonSerializer.Serialize(new SdpDescription("offer", sdp))) + "}";
 
-    private static string AnswerJson(string sdp = "v=0 remote answer") =>
-        "{\"type\":\"answer\",\"connectionId\":\"p1\",\"answer\":" +
+    private static string AnswerJson(string sdp = "v=0 remote answer", string connectionId = "p1") =>
+        "{\"type\":\"answer\",\"connectionId\":\"" + connectionId + "\",\"answer\":" +
         JsonSerializer.Serialize(JsonSerializer.Serialize(new SdpDescription("answer", sdp))) + "}";
 
     private static string IceJson(string candidate = "candidate:1 1 udp 1 10.0.0.1 5000 typ host") =>
@@ -50,6 +50,8 @@ public sealed class VoiceChatSessionTests
 
         Assert.False(microphone.IsCapturing);
         engines[^1].RaiseRemoteAudioStarted();
+        session.MicDspEnabled = false;
+        session.MicGain = 1.0f;
 
         Assert.True(microphone.IsCapturing);
         Assert.Equal(1, microphone.StartCount);
@@ -69,6 +71,7 @@ public sealed class VoiceChatSessionTests
         transport.SimulateEvent(RegisteredJson);
         transport.SimulateEvent(PeerConnectAnswererJson);
         engines[^1].RaiseRemoteAudioStarted();
+        session.MicDspEnabled = false;
 
         session.MicGain = 1.5f;
         microphone.RaisePcm(100, 200, -300);
@@ -87,6 +90,8 @@ public sealed class VoiceChatSessionTests
         transport.SimulateEvent(RegisteredJson);
         transport.SimulateEvent(PeerConnectAnswererJson);
         engines[^1].RaiseRemoteAudioStarted();
+        session.MicDspEnabled = false;
+        session.MicGain = 1.0f;
 
         await session.SetMutedAsync(true);
         microphone.RaisePcm(1, 2, 3);
@@ -440,7 +445,7 @@ public sealed class VoiceChatSessionTests
         using JsonDocument offerDoc = JsonDocument.Parse(offerPayload.GetProperty("offer").GetString()!);
         Assert.Equal("offer", offerDoc.RootElement.GetProperty("type").GetString());
 
-        transport.SimulateEvent(AnswerJson());
+        transport.SimulateEvent(AnswerJson(connectionId: "p2"));
         Assert.Single(engine.RemoteDescriptions);
         Assert.Equal(("answer", "v=0 remote answer"), engine.RemoteDescriptions[0]);
         Assert.Equal(0, engine.AnswerCount);
